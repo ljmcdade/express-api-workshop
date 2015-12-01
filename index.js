@@ -17,6 +17,20 @@ app.use(function(request, response, next) {
 });
 
 
+app.delete('/AddressBook/:id', function(request, response){
+    if (request.body.accountId){
+        connection.query("delete from AddressBook where AddressBook.id=" +request.params.id, function(error, result){
+            if (error){
+                console.log(error);
+            }
+            else {
+                console.log(result);
+            }
+        });
+    }
+});
+
+
 app.post('/AddressBook', function(request, response) {
     if (request.body.name) {
         connection.query("insert into AddressBook (accountId, name) values (" + request.accountId + ", '" + request.body.name + "')",
