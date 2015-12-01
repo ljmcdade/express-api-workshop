@@ -17,11 +17,28 @@ app.use(function(request, response, next) {
 });
 
 
-app.delete('/AddressBook/:id', function(request, response){
-    if (request.body.accountId){
-        connection.query("delete from AddressBook where AddressBook.id=" +request.params.id, function(error, result){
-            if (error){
-                console.log(error);
+app.put('/AddressBook/:id', function(request, response) {
+    connection.query("update AddressBook set name='" + request.body.name + "'where AddressBook.id=" + request.params.id, function(error, result){
+        //console.log(request.body);
+        if (error){
+            response.sendStatus(404);
+        }
+        else {
+            connection.query("select * from AddressBook where AddressBook.id=" + request.params.id, function(error, result){
+                console.log(result);
+                response.json(result);
+            })}
+        
+    });
+});
+
+
+app.delete('/AddressBook/:id', function(request, response) {
+    if (request.body.accountId) {
+        connection.query("delete from AddressBook where AddressBook.id=" + request.params.id, function(error, result) {
+            if (error) {
+                //console.log(error);
+                response.sendStatus(404);
             }
             else {
                 console.log(result);
@@ -36,7 +53,8 @@ app.post('/AddressBook', function(request, response) {
         connection.query("insert into AddressBook (accountId, name) values (" + request.accountId + ", '" + request.body.name + "')",
             function(error, result) {
                 if (error) {
-                    console.log('error');
+                    //console.log('error');
+                    response.sendStatus(404);
                 }
                 else if (result) {
                     console.log(result);
@@ -59,6 +77,7 @@ app.get('/AddressBook/:id', function(request, response) { // close js string ope
         }
         else if (result.length === 0) { // if the result contains nothing
             response.sendStatus(404); // tell the user that the result does not contain anything
+            //response.status(404).send();
         }
         else {
             response.json(result[0]); //result is array so result at 1st position
