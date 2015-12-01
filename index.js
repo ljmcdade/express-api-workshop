@@ -8,30 +8,28 @@ var connection = db.createConnection({
     database: 'addressbook'
 });
 
-
 var app = express();
 app.use(bodyParser.json());
 
-app.use(function(request, response, next){
+app.use(function(request, response, next) {
     request.accountId = 1;
     next();
 });
 
 
-app.get('/AddressBook', function(request, response) {
+app.get('/AddressBook/:id', function(request, response) {   // close js string open variable  
     //console.log(request.accountId);
-    connection.query('select id, name from AddressBook where accountId=1', function(error, result) {
-            if (error) {
-                console.log('error');
-            }
-            else if (result) {
-                response.send(result);
-            }
+    connection.query('select id, name from AddressBook where id=' + request.params.id + ' and accountId=' + request.accountId, function(error, result) {
+        if (error) {
+            console.log('error');
         }
-
-    );
-
-
+        else if (result.length === 0) { // if the result contains something
+            response.sendStatus(404); // tell the user that the result does not contain anything
+            }
+        else  {
+            response.json(result[0]);
+        }
+    });
 });
 
 
