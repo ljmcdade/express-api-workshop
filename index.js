@@ -17,17 +17,37 @@ app.use(function(request, response, next) {
 });
 
 
-app.get('/AddressBook/:id', function(request, response) {   // close js string open variable  
+app.post('/AddressBook', function(request, response) {
+    if (request.body.name) {
+        connection.query("insert into AddressBook (accountId, name) values (" + request.accountId + ", '" + request.body.name + "')",
+            function(error, result) {
+                if (error) {
+                    console.log('error');
+                }
+                else if (result) {
+                    console.log(result);
+                    response.json(result);
+                }
+                response.end();
+
+
+            });
+    }
+});
+
+
+
+app.get('/AddressBook/:id', function(request, response) { // close js string open variable  
     //console.log(request.accountId);
     connection.query('select id, name from AddressBook where id=' + request.params.id + ' and accountId=' + request.accountId, function(error, result) {
         if (error) {
             console.log('error');
         }
-        else if (result.length === 0) { // if the result contains something
+        else if (result.length === 0) { // if the result contains nothing
             response.sendStatus(404); // tell the user that the result does not contain anything
-            }
-        else  {
-            response.json(result[0]);
+        }
+        else {
+            response.json(result[0]); //result is array so result at 1st position
         }
     });
 });
