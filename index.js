@@ -17,18 +17,44 @@ app.use(function(request, response, next) {
 });
 
 
+
+app.put('/Entry/:id', function(request, response) {
+    connection.query("update Entry set firstName='" +
+        request.body.firstName + " ', lastName='" +
+        request.body.lastName + " ', birthday=' " +
+        request.body.birthday + " 'where addressbookId= " +
+        request.body.addressbookId + " and id=" + request.params.id + "",
+        function(error, result) {
+            //console.log("result 1", result);
+            if (error) {
+               console.log(error);
+               response.sendStatus(404);
+            }
+            else {
+                connection.query("select * from Entry where addressbookId=" + request.body.addressbookId, function(error, result) {
+                    //console.log("result 2", result);
+                    response.json(result[result.length - 1]);
+                });
+            }
+        });
+});
+
+
+
+
 app.put('/AddressBook/:id', function(request, response) {
-    connection.query("update AddressBook set name='" + request.body.name + "'where AddressBook.id=" + request.params.id, function(error, result){
+    connection.query("update AddressBook set name='" + request.body.name + "'where AddressBook.id=" + request.params.id, function(error, result) {
         //console.log(request.body);
-        if (error){
+        if (error) {
             response.sendStatus(404);
         }
         else {
-            connection.query("select * from AddressBook where AddressBook.id=" + request.params.id, function(error, result){
+            connection.query("select * from AddressBook where AddressBook.id=" + request.params.id, function(error, result) {
                 console.log(result);
                 response.json(result);
-            })}
-        
+            })
+        }
+
     });
 });
 
