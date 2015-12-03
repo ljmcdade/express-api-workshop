@@ -1,5 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var bcrypt = require('bcrypt-nodejs');
 
 var db = require('mysql');
 var connection = db.createConnection({
@@ -16,13 +17,53 @@ app.use(function(request, response, next) {
     next();
 });
 
+//Create Signup for Account -- new account id, email, password
+
+app.post('/Account/signup', function(request, response) {
+    
+    var hash = bcrypt.hashSync(request.body.password);
+    
+    connection.query("INSERT into Account SET email='" + request.body.email + "' , password='" + hash + "', createdAt=NOW()", function(error, result) {
+        if (error) {
+            console.log("can't insert");
+            console.log(error);
+            response.sendStatus(404);
+        }
+        // else if (request.body.password !== request.body.password) {
+        //     response.sendStatus(400);
+        //     response.send("Passwords don't match!");
+        // }
+        // else if (request.body.password.length < 8) {
+        //     response.sendStatus(400);
+        //     response.send("Password too short!");
+        
+        else  {
+            console.log(result);
+            
+            // bcrypt.hash(request.body.password, null, null, function(error, result) {});
+            // bcrypt.compare(request.body.password, hash, function(error, result) {});
+            
+            connection.query("select id, email from Account where id=" + result.insertId, function(error, result2) {
+                if (error) {
+                    console.log(error);
+                    response.sendStatus(404);
+                }
+                else {
+                    response.send("You're signed up with the email:" + result2[0].email);
+                }
+            });
+
+        }
+    });
+});
+
 
 
 //CREATE Address, Email, Phone
 
-app.post('/Address/:id', function(request, response) {
+app.post('/Address', function(request, response) {
 
-    connection.query("select AddressBook.accountId from AddressBook JOIN Entry on AddressBook.id = Entry.addressbookId JOIN Address on Entry.id = Address.entryId where Address.id=" + request.params.id, function(error, result) {
+    connection.query("select AddressBook.accountId from AddressBook JOIN Entry on AddressBook.id = Entry.addressbookId where Entry.id=" + request.body.entryId, function(error, result) {
         if (error) {
             console.log(error);
             response.sendStatus(404);
@@ -59,9 +100,9 @@ app.post('/Address/:id', function(request, response) {
     });
 });
 
-app.post('/Email/:id', function(request, response) {
+app.post('/Email', function(request, response) {
 
-    connection.query("select AddressBook.accountId from AddressBook JOIN Entry on AddressBook.id = Entry.addressbookId JOIN Email on Entry.id = Email.entryId where Email.id=" + request.params.id, function(error, result) {
+    connection.query("select AddressBook.accountId from AddressBook JOIN Entry on AddressBook.id = Entry.addressbookId where Entry.id=" + request.body.entryId, function(error, result) {
         if (error) {
             console.log(error);
             response.sendStatus(404);
@@ -97,8 +138,8 @@ app.post('/Email/:id', function(request, response) {
 });
 
 
-app.post('/Phone/:id', function(request, response) {
-    connection.query("select AddressBook.accountId from AddressBook JOIN Entry on AddressBook.id = Entry.addressbookId JOIN Phone on Entry.id = Phone.entryId where Phone.id=" + request.params.id, function(error, result) {
+app.post('/Phone', function(request, response) {
+    connection.query("select AddressBook.accountId from AddressBook JOIN Entry on AddressBook.id = Entry.addressbookId where Entry.id=" + request.body.entryId, function(error, result) {
         if (error) {
             console.log(error);
             response.sendStatus(404);
@@ -314,7 +355,7 @@ app.put('/Phone/:id', function(request, response) {
         }
         else if (result.length === 1) {
             if (result[0].accountId === request.accountId) {
-                
+
                 connection.query("update Phone set entryId=" +
                     request.body.entryId + ', type="' +
                     request.body.type + '", subtype="' +
@@ -348,7 +389,7 @@ app.put('/Phone/:id', function(request, response) {
 //DELETE Address, Email, Phone
 
 app.delete('/Address/:id', function(request, response) {
-    
+
     connection.query("select AddressBook.accountId from AddressBook JOIN Entry on AddressBook.id = Entry.addressbookId JOIN Address on Entry.id = Address.entryId where Address.id=" + request.params.id, function(error, result) {
         if (error) {
             console.log(error);
@@ -357,7 +398,7 @@ app.delete('/Address/:id', function(request, response) {
         else if (result.length === 1) {
             if (result[0].accountId === request.accountId) {
                 if (request.body.entryId) {
-                    
+
                     connection.query("delete from Address where Address.id=" + request.params.id, function(error, result) {
                         if (error) {
                             console.log(error);
@@ -380,7 +421,7 @@ app.delete('/Address/:id', function(request, response) {
 });
 
 app.delete('/Email/:id', function(request, response) {
-    
+
     connection.query("select AddressBook.accountId from AddressBook JOIN Entry on AddressBook.id = Entry.addressbookId JOIN Email on Entry.id = Email.entryId where Email.id=" + request.params.id, function(error, result) {
         if (error) {
             console.log(error);
@@ -419,7 +460,7 @@ app.delete('/Phone/:id', function(request, response) {
         }
         else if (result.length === 1) {
             if (result[0].accountId === request.accountId) {
-                
+
                 connection.query("delete from Phone where id=" + request.params.id, function(error, result) {
                     if (error) {
                         console.log(error);
@@ -445,9 +486,9 @@ app.delete('/Phone/:id', function(request, response) {
 
 //Entry CREATE
 
-app.post('/Entry/:id', function(request, response) {
+app.post('/Entry', function(request, response) {
 
-    connection.query("select AddressBook.accountId from AddressBook JOIN Entry on AddressBook.id=Entry.addressbookId where Entry.id=" + request.params.id, function(error, result) {
+    connection.query("select AddressBook.accountId from AddressBook JOIN Entry on AddressBook.id=Entry.addressbookId where Entry.id=" + request.body.addressbookId, function(error, result) {
         if (error) {
             console.log(error);
             response.sendStatus(404);
@@ -460,8 +501,8 @@ app.post('/Entry/:id', function(request, response) {
                 connection.query("insert into Entry set firstName='" + request.body.firstName +
                     " ', lastName='" + request.body.lastName +
                     " ', birthday=' " + request.body.birthday +
-                    " 'where addressbookId= " + request.body.addressbookId +
-                    " and id=" + request.params.id + "",
+                    " ' where addressbookId= " + request.body.addressbookId +
+                    "",
                     function(error, result) {
                         //console.log("result 1", result);
                         if (error) {
@@ -469,7 +510,7 @@ app.post('/Entry/:id', function(request, response) {
                             response.sendStatus(404);
                         }
                         else {
-                            connection.query("select * from Entry where id=" + request.params.id, function(error, result) {
+                            connection.query("select * from Entry where addressbookId=" + request.body.addressbookId, function(error, result) {
                                 //console.log("result 2", result);
                                 response.json(result[result.length - 1]);
                             });
@@ -600,7 +641,7 @@ app.delete('/Entry/:id', function(request, response) {
         }
         else if (result.length === 1) {
             if (result[0].accountId === request.accountId) {
-                
+
                 connection.query("delete from Entry where id=" + request.params.id, function(error, result) {
                     if (error) {
                         console.log(error);
@@ -627,9 +668,9 @@ app.delete('/Entry/:id', function(request, response) {
 
 //AddressBook CREATE
 
-app.post('/AddressBook/:id', function(request, response) {
+app.post('/AddressBook', function(request, response) {
 
-    connection.query("select accountId from AddressBook where accountId=" + request.params.id, function(error, result) {
+    connection.query("select accountId from AddressBook where accountId=" + request.body.accountId, function(error, result) {
         if (error) {
             console.log(error);
             response.sendStatus(404);
@@ -637,7 +678,7 @@ app.post('/AddressBook/:id', function(request, response) {
         else if (result.length === 1) {
             if (result[0].accountId === request.accountId) {
 
-                connection.query("insert into AddressBook (accountId, name) values (" + request.accountId + ", '" + request.body.name + "')",
+                connection.query("insert into AddressBook (accountId, name) values (" + request.body.accountId + ", '" + request.body.name + "')",
                     function(error, result) {
                         if (error) {
                             //console.log('error');
@@ -674,7 +715,7 @@ app.get('/AddressBook/:id', function(request, response) { // close js string ope
         }
         else if (result.length === 1) { //if result exists
             if (result[0].accountId === request.accountId) { //if user allowed
-            
+
                 connection.query('select * from AddressBook where id=' + request.params.id + ' and accountId=' + request.accountId, function(error, result) {
                     if (error) {
                         console.log(error);
@@ -712,14 +753,14 @@ app.put('/AddressBook/:id', function(request, response) {
         }
         else if (result.length === 1) { //if result exists
             if (result[0].accountId === request.accountId) { //if user allowed
-            
+
                 connection.query("update AddressBook set name='" + request.body.name + "'where AddressBook.id=" + request.params.id, function(error, result) {
                     //console.log(request.body);
                     if (error) {
                         response.sendStatus(404);
                     }
                     else {
-                        
+
                         connection.query("select * from AddressBook where AddressBook.id=" + request.params.id, function(error, result) {
                             console.log(result);
                             response.json(result);
@@ -741,7 +782,7 @@ app.put('/AddressBook/:id', function(request, response) {
 
 
 app.delete('/AddressBook/:id', function(request, response) {
-    
+
     connection.query("select accountId from AddressBook where accountId=" + request.params.id, function(error, result) {
         if (error) {
             console.log(error);
